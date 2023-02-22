@@ -2,6 +2,7 @@ package com.cooksys.quiz_api.mappers;
 
 import java.util.List;
 
+import com.cooksys.quiz_api.dtos.QuizRequestDto;
 import com.cooksys.quiz_api.dtos.QuizResponseDto;
 import com.cooksys.quiz_api.entities.Quiz;
 
@@ -14,4 +15,5 @@ public interface QuizMapper {
 
   List<QuizResponseDto> entitiesToDtos(List<Quiz> entities);
 
+  Quiz dtoToEntity(QuizRequestDto quizRequestDto);
 }
