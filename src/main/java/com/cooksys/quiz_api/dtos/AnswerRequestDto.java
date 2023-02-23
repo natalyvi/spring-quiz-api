@@ -3,12 +3,9 @@ package com.cooksys.quiz_api.dtos;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
-@Data
 @NoArgsConstructor
-public class QuestionRequestDto {
+@Data
+public class AnswerRequestDto {
     private String text;
-
-    private List<AnswerRequestDto> answers;
+    private boolean correct;
 }

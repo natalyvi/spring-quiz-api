@@ -1,15 +1,19 @@
 package com.cooksys.quiz_api.services.impl;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import com.cooksys.quiz_api.dtos.QuestionRequestDto;
 import com.cooksys.quiz_api.dtos.QuestionResponseDto;
 import com.cooksys.quiz_api.dtos.QuizRequestDto;
 import com.cooksys.quiz_api.dtos.QuizResponseDto;
+import com.cooksys.quiz_api.entities.Answer;
 import com.cooksys.quiz_api.entities.Question;
 import com.cooksys.quiz_api.entities.Quiz;
 import com.cooksys.quiz_api.mappers.QuestionMapper;
 import com.cooksys.quiz_api.mappers.QuizMapper;
+import com.cooksys.quiz_api.repositories.AnswerRepository;
 import com.cooksys.quiz_api.repositories.QuestionRepository;
 import com.cooksys.quiz_api.repositories.QuizRepository;
 import com.cooksys.quiz_api.services.QuizService;
@@ -28,6 +32,8 @@ public class QuizServiceImpl implements QuizService {
     private final QuizMapper quizMapper;
     private final QuestionMapper questionMapper;
 
+    private final AnswerRepository answerRepository;
+
 
     @Override
     public List<QuizResponseDto> getAllQuizzes() {
@@ -36,12 +42,27 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     public ResponseEntity<QuizResponseDto> createQuiz(QuizRequestDto quizRequestDto) {
-        if (quizRequestDto.getName() == null) {
+        /*if (quizRequestDto.getName() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        }*/
         Quiz quizToSave = quizMapper.dtoToEntity(quizRequestDto);
+        quizRepository.saveAndFlush(quizToSave);
 
-        return new ResponseEntity<>(quizMapper.entityToDto(quizRepository.saveAndFlush(quizToSave)), HttpStatus.OK);
+        List<Question> questionsToSave = quizToSave.getQuestions();
+
+        for (Question question :
+                questionsToSave) {
+            question.setQuiz(quizToSave);
+            questionRepository.saveAndFlush(question);
+            List<Answer> answers = question.getAnswers();
+            for (Answer answer :
+                    answers) {
+                answer.setQuestion(question);
+                answerRepository.saveAndFlush(answer);
+            }
+        }
+
+        return new ResponseEntity<>(quizMapper.entityToDto(quizToSave), HttpStatus.OK);
 
     }
 
@@ -83,8 +104,12 @@ public class QuizServiceImpl implements QuizService {
         if (questionRequestDto.getText() == null || !quizRepository.existsById(id)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        Question questionToAdd = questionMapper.dtoToEntity(questionRequestDto);
+        // Retrieve the quiz, question and its answers
         Quiz quizById = quizRepository.getById(id);
+        Question questionToAdd = questionMapper.dtoToEntity(questionRequestDto);
+        List<Answer> answersToAdd = questionToAdd.getAnswers();
+
+        // Make necessary changes to them
         List<Question> questions;
         if (quizById.getQuestions() == null) {
             questions = new ArrayList<>();
@@ -93,14 +118,22 @@ public class QuizServiceImpl implements QuizService {
         }
         questions.add(questionToAdd);
         quizById.setQuestions(questions);
+        quizRepository.saveAndFlush(quizById);
+
+        questionToAdd.setQuiz(quizById);
         questionRepository.saveAndFlush(questionToAdd);
 
-        return new ResponseEntity<>(quizMapper.entityToDto(quizRepository.saveAndFlush(quizById)), HttpStatus.OK);
+        for (Answer answer: answersToAdd) {
+            answer.setQuestion(questionToAdd);
+            answerRepository.saveAndFlush(answer);
+        }
+
+        return new ResponseEntity<>(quizMapper.entityToDto(quizById), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<QuestionResponseDto> deleteQuestionFromQuiz(Long id, Long questionID) {
-        if(!quizRepository.existsById(id) || !questionRepository.existsById(questionID)){
+        if (!quizRepository.existsById(id) || !questionRepository.existsById(questionID)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         Quiz quizById = quizRepository.getById(id);
