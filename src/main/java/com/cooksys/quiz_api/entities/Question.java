@@ -22,7 +22,7 @@ public class Question {
   @JoinColumn(name = "quiz_id")
   private Quiz quiz;
 
-  @OneToMany(mappedBy = "question", fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "question")
   private List<Answer> answers;
 
 }

@@ -18,7 +18,7 @@ public class Quiz {
 
   private String name;
 
-  @OneToMany(mappedBy = "quiz", fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "quiz")
   private List<Question> questions;
 
 }

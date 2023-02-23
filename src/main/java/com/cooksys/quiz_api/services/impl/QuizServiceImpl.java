@@ -72,6 +72,11 @@ public class QuizServiceImpl implements QuizService {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         Quiz quizToDelete = quizRepository.getById(id);
+        List<Question> questions = quizToDelete.getQuestions();
+        for (Question question : questions) {
+            question.setQuiz(null);
+            questionRepository.saveAndFlush(question);
+        }
         quizRepository.deleteById(id);
         return new ResponseEntity<>(quizMapper.entityToDto(quizToDelete), HttpStatus.OK);
     }
